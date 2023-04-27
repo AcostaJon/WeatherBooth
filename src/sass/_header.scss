@@ -1,0 +1,63 @@
+// header section of application(temperature, time etc)
+.header {
+    padding: 5% 8%;
+    &-content {
+      height: 100%;
+      display: grid;
+      align-items: end;
+      grid-template-areas:
+        "temp temp temp"
+        ". . ."
+        "city-time .  condition";
+      grid-template-columns: 2fr 1fr 2fr;
+      grid-template-rows: 1fr 5% 1fr;
+      .temperature {
+        grid-area: temp;
+        font-size: 50px;
+        align-self: flex-start;
+        background-color: rgba(0, 0, 0, 0.459);
+        border-radius: 15px;
+        padding: 5px;
+        sup {
+          font-size: 30px;
+          position: absolute;
+        }
+      }
+      .headerLogo {
+        font-size: 25px;
+      }
+      .city-time {
+        grid-area: city-time;
+        background-color: rgba(0, 0, 0, 0.459);
+        border-radius: 15px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        h1{
+          font-size: 16px;
+        }
+        p {
+          margin: 0;
+        }
+      }
+      .weather-condition {
+        grid-area: condition;
+        text-align: center;
+        background-color: rgba(0, 0, 0, 0.459);
+        border-radius: 15px;
+        padding: 10px;
+        width: fit-content;
+        justify-self: end;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        p {
+          margin: 0;
+        }
+      }
+    }
+  }
+  
