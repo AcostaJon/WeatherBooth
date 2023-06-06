@@ -6,167 +6,160 @@ import Main from "./components/main";
 // initial listed items id
 let nextId = 0;
 
-// header logo (weather booth)
-const HeaderLogo = () => (
-  <span className="headerLogo">
-    <strong>
-      <i>weather</i>
-    </strong>
-    booth
-  </span>
-);
-
 function App() {
   // state
-  const [city, setCity] = useState("");
-  const [region, setRegion] = useState("");
-  const [temp, setTemp] = useState(<HeaderLogo />);
-  const [time, setTime] = useState("Search for a city");
+  const [response, setResponse] = useState([])
+  const [error, setError] = useState(false);
+  const [query, setQuery] = useState("Miami");
+  const [searchedCitys, setsearchedCitys] = useState([]);
+  const [temp, setTemp] = useState();
+  const [city, setCity] = useState();
   const [condition, setCondition] = useState([]);
   const [conditionText, setConditionText] = useState("");
-  const [cloudy, setCloudy] = useState([0]);
-  const [humidity, setHumidity] = useState([0]);
-  const [wind, setWind] = useState([0]);
-  const [precipitation, setPrecipitation] = useState([0]);
-  const [cityList, setcityList] = useState([]);
+  const [cloudy, setCloudy] = useState([]);
+  const [humidity, setHumidity] = useState([]);
+  const [wind, setWind] = useState([]);
+  const [precipitation, setPrecipitation] = useState([]);
+  const [region, setRegion] = useState("");
   const [isDay, setIsDay] = useState(3);
+  const [week, setWeek] = useState([]);
+  const [warning, setWarning] = useState([]);
 
-  // use Effect or component did mount
+  // ********
+  // *** Event Handlers ***
+  // *********
+
+  // useEffect api request, and set bg based on isDay
   useEffect(() => {
-    const saveCityListElement = document.querySelector(".saved-citys");
-    saveCityListElement.style.display = "none";
-    if (cityList.length > 0) {
-      saveCityListElement.style.display = "block";
-    }
-    // change background color based on time of day
-    backgroundColor();
-  });
+    fetch(`http://api.weatherapi.com/v1/forecast.json?key=36279875f3bd444e934214049221502&q=${query}&days=4&aqi=no&alerts=yes`)
+      .then(res => res.json())
+      .then(res => {
+        setResponse(res)
+        setCloudy(res.current.cloud)
+        setHumidity(res.current.humidity)
+        setWind(res.current.wind_mph)
+        setPrecipitation(res.current.precip_in)
+        setTemp(res.current.temp_f)
+        setCity(res.location.name)
+        setRegion(res.location.region)
+        setCondition(res.current.condition.icon)
+        setConditionText(res.current.condition.text)
+        setIsDay(res.current.is_day)
+        setWeek(res.forecast.forecastday);
+        setWarning(res.alerts.alert[0]);
 
-  //api call
-  const locationSearch = (userInput) => {
-    const input = document.getElementById("search-input");
-    //feth api call. Update state
-      fetch(`https://api.weatherapi.com/v1/current.json?key=36279875f3bd444e934214049221502&q=${userInput}`)
-        .then((res) => res.json())
-        .then((result) => {
-          // remove the decimal from the temperature using Math.trunc
-          // set the states
-          setCity(result.location.name);
-          setRegion(result.location.region);
-          setTemp(Math.trunc(result.current.temp_f));
-          setCondition(result.current.condition.icon);
-          setCloudy(result.current.cloud);
-          setHumidity(result.current.humidity);
-          setWind(result.current.wind_mph);
-          setPrecipitation(result.current.precip_in);
-          setConditionText(result.current.condition.text);
-          setIsDay(result.current.is_day);
-          setTime(formatAMPM(new Date));
+        //create a "searched city object", push into array
+        searchedCitys.push({
+          id: nextId++,
+          city: res.location.name,
+        });
+        // filter duplicates from array
+        const filteredCitys = searchedCitys.reduce((accumulator, current) => {
+          if (!accumulator.find((item) => item.city === current.city)) {
+            accumulator.push(current);
+          }
+          return accumulator;
+        }, []);
+        // update searched city list 
+        setsearchedCitys(filteredCitys)
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }, [query]);
 
-          // Saved citys list
-          //push city object into cityList array
-          cityList.push({
-            id: nextId++,
-            city: result.location.name,
-            region: result.location.region,
-          });
-
-          // returns citylist array without duplicates
-          const cityListFilteredDuplicates = cityList.reduce((accumulator, current) => {
-            if (!accumulator.find((item) => item.city === current.city)) {
-              accumulator.push(current);
-            }
-            return accumulator;
-          }, []);
-
-          // update saved citys with filtered out duplicates
-          setcityList(cityListFilteredDuplicates);
-        }
-        ).catch((error) => {
-            alert("(Invalid input) Search for a city name or zipcode " + "ErrorMessage: " + error)
-        })
-    // clear the input
-    input.value = "";
-  }
-
-  // search icon or enter keyboard button - form handler
-  const formSubmit = (e) => {
-    e.preventDefault();
-    // get user input
-    const userInput = e.target[0].value;
-    locationSearch(userInput);
-  };
-
-  // search city in list - click handler
-  const searchSavedCity = (e) => {
-    const clickedLi = e.target;
-    locationSearch(clickedLi.textContent);
-  };
-
-  // remove city when remove button(x) is clicked -  click handler
-  const removeCity = (e) => {
-    // get city name
-    const cityName = e.target.parentNode.parentNode.firstChild.textContent;
-    // return new arry with removed city
-    const newCityList = cityList.filter((city) => city.city !== cityName);
-    setcityList(newCityList);
-  };
-
-  // set background color based on current time of day
+  // change background color based on current time of day
   // light blue for day, black for night 
   const backgroundColor = () => {
     const body = document.querySelector("body");
     if (isDay === 1) {
       // day
       body.style.backgroundColor = "#1ecbe1"
-    }else if(isDay === 0 ){
+    } else if (isDay === 0) {
       // night
       body.style.backgroundColor = "#01090a"
     }
   }
-  
-  // get date and time
-  function formatAMPM(date) {
-  // get current time with 12 hour format
-  var hours = date.getHours();
-  var minutes = date.getMinutes();
-  var ampm = hours >= 12 ? 'pm' : 'am';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // the hour '0' should be '12'
-  minutes = minutes < 10 ? '0'+minutes : minutes;
-  var strTime = hours + ':' + minutes + ' ' + ampm;
-  // get current date
-  let currentDate = new Date().toLocaleDateString();
-  return strTime + " " + currentDate;
+
+  // search button - form handler
+  const formSubmit = inputValue => {
+    setQuery(inputValue);
+  };
+
+  // search saved city
+  const searchSavedCity = (e) => {
+    const clickedCity = e.target.innerText;
+    formSubmit(clickedCity);
+  };
+
+  // remove city
+  const removeCity = (e) => {
+    const cityName = e.target.parentNode.parentNode.firstChild.textContent;
+    const newCityList = searchedCitys.filter((city) => city.city !== cityName);
+    setsearchedCitys(newCityList);
+  };
+
+  // show / hide 3 day forecast
+  const displayForecast = (e) => {
+    const foreCast = document.querySelector(".forecast-container");
+
+    if (foreCast.style.display === "none" || foreCast.style.display === "") {
+      foreCast.style.display = "flex"
+    } else {
+      foreCast.style.display = "none";
+    }
+
+
   }
 
-  // render
-    return (
-       // main app render
-      <div className="App">
-        {/* top or left side of app */}
-          <Header 
-            cityName={city} 
-            region={region} 
-            temperature={temp} 
-            time={time} 
-            condition={condition} 
-            conditionText={conditionText} />
-        {/* bottom or right side of app */}
-          <Main
-          cityName={city}
-          region={region}
-          formSubmit={formSubmit}
-          cloudy={cloudy}
-          humidity={humidity}
-          wind={wind}
-          precipitation={precipitation}
-          cityList={cityList}
-          clickSearch={searchSavedCity}
-          removeListedCity={removeCity}
-          />
-      </div>
-    );
+  // show / hide alert message
+  const displayAlertMsg = (e) => {
+    const alert = document.querySelector(".alertMsgContainer");
+
+    if (alert.style.display === "none" || alert.style.display === "") {
+      alert.style.display = "flex"
+    } else {
+      alert.style.display = "none";
+    }
+
+  }
+
+  // invoke functions
+  backgroundColor();
+
+  {
+    if (warning === "undefined") {
+      setError(true);
+    }
+  }
+  return (
+    // main app render
+    <div className="App">
+      {/* top or left side of app */}
+      <Header
+        cityName={city}
+        region={region}
+        temperature={temp}
+        condition={condition}
+        conditionText={conditionText}
+        week={week}
+        warning={warning}
+        displayForecast={displayForecast}
+        displayAlertMsg={displayAlertMsg}
+      />
+      {/* bottom or right side of app */}
+      <Main
+        cloudy={cloudy}
+        humidity={humidity}
+        wind={wind}
+        precipitation={precipitation}
+        cityList={searchedCitys}
+        formSubmit={formSubmit}
+        clickSearch={searchSavedCity}
+        removeListedCity={removeCity}
+      />
+    </div>
+  );
 }
 
 

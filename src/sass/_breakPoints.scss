@@ -12,6 +12,11 @@
     .header {
       height: auto;
       width: 50%;
+      .daily{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
       .temperature {
         font-size: 120px;
       }
